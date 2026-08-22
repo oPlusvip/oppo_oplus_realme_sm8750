@@ -517,13 +517,13 @@ jobs:
             fi
           fi
 
-      - name: 启用ADIOS IO调度器
+      - name: 启用 ECMP 多路径路由支持
         if: inputs.ecmp_enable 
         run: |
            echo "正在启用 ECMP 多路径路由支持..."          
            cd kernel_workspace          
            echo "CONFIG_IP_ROUTE_MULTIPATH=y" >> ./common/arch/arm64/configs/gki_defconfig          
-           echo "CONFIG_IP_ROUTE_VERBOSE=y" >> ./common/arch/arm64/configs/gki_defconfig
+
       - name: 启用ADIOS IO调度器
         if: inputs.adios_enable
         run: |
