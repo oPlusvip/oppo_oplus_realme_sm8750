@@ -521,7 +521,7 @@ jobs:
         if: inputs.ecmp_enable 
         run: |
            echo "正在编译MPTCP 内核模块"          
-           cd kernel_workspace          
+           cd kernel_workspace        
            echo "CONFIG_MPTCP=m" >> ./common/arch/arm64/configs/gki_defconfig          
 
       - name: 启用ADIOS IO调度器
