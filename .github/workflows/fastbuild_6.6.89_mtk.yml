@@ -517,7 +517,7 @@ jobs:
             fi
           fi
 
-      - name: 启用 ECMP 多路径路由支持
+      - name: 启用 MPTCP 外置模块支持
         if: inputs.ecmp_enable 
         run: |
            echo "正在编译MPTCP 内核模块"          
