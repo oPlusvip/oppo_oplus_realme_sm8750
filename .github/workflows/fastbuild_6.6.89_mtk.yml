@@ -66,7 +66,7 @@ on:
         type: boolean
         default: 'false'
       ecmp_enable:      
-        description: '开启 ECMP 多路径路由 (WiFi+蜂窝负载均衡)'      
+        description: 'MPTCP支持'      
         required: false      
         type: boolean      
         default: 'false'
@@ -520,9 +520,9 @@ jobs:
       - name: 启用 ECMP 多路径路由支持
         if: inputs.ecmp_enable 
         run: |
-           echo "正在启用 ECMP 多路径路由支持..."          
+           echo "正在编译MPTCP 内核模块"          
            cd kernel_workspace          
-           echo "CONFIG_IP_ROUTE_MULTIPATH=y" >> ./common/arch/arm64/configs/gki_defconfig          
+           echo "CONFIG_MPTCP=m" >> ./common/arch/arm64/configs/gki_defconfig          
 
       - name: 启用ADIOS IO调度器
         if: inputs.adios_enable
