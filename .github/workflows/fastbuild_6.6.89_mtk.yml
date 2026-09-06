@@ -523,7 +523,7 @@ jobs:
            echo "正在编译MPTCP 内核模块"          
            cd kernel_workspace        
            echo "CONFIG_MPTCP=m" >> ./common/arch/arm64/configs/gki_defconfig 
-           sed -i '/"mptcp\.ko",/! {/"mac80211\.ko",/a\    "mptcp.ko",}' ./common/modules.bzl
+           sed -i '/"mac80211\.ko",/a\    "mptcp.ko",' ./common/modules.bzl
            echo "mptcp.ko" >> ./common/android/gki_arm64_modules
 
       - name: 启用ADIOS IO调度器
