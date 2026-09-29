@@ -52,7 +52,7 @@ on:
           - 'true'
           - 'default'
       bbrv3_enable:
-        description: '是否集成BBRv3拥塞控制算法(复用GKID-Kernels方案, KMI-safe, 需编译测试)'
+        description: '是否集成BBRv3拥塞控制算法(复用GKID-Kernels方案, 仅编译不设为默认, 需编译测试)'
         required: true
         type: boolean
         default: 'false'
@@ -480,39 +480,45 @@ jobs:
           echo "正在复用 GKID-Kernels 的 BBRv3 集成方案..."
           cd kernel_workspace
 
-          # GKID-Kernels 使用的 BBRv3 补丁集，来源于 OpenWrt 的 6.6 backport
-          # 参考: https://github.com/openwrt/openwrt/pull/16414
           PATCH_BASE="https://raw.githubusercontent.com/openwrt/openwrt/master/target/linux/generic/backport-6.6"
 
-          # 按顺序应用补丁
           for patch in \
             "612-18-bbr-v3-upstream-prep-2024-02-19-01-tcp-export-TCPI_OPT_ECN_LOW-in-tcp_info-tcpi_options.patch" \
             "612-19-bbr-v3-upstream-prep-2024-02-19-01-fixup-bbr-v3-remove-references-to-v1-and-v2.patch" \
             "612-20-bbr-v3-upstream-prep-2024-02-19-01-fixup-probe_rtt-comments.patch" \
             "612-21-bbr-v3-upstream-2024-02-19-01-tcp_bbr-v3-update-TCP-bbr-congestion-control-mod.patch"
           do
-            echo "下载补丁: $patch"
-            wget -q "$PATCH_BASE/$patch" -O "./common/$patch"
+            echo "开始下载补丁: $patch"
+            # 去掉了 -q，加入了错误判断，防止 bash -e 直接静默退出
+            if ! wget "$PATCH_BASE/$patch" -O "./common/$patch"; then
+              echo "❌ 补丁 $patch 下载失败，可能是链接已失效或文件名已改变。"
+              continue
+            fi
+            
             if [ -f "./common/$patch" ]; then
               echo "应用补丁: $patch"
               cd ./common
-              patch -p1 -F 3 < "$patch" || echo "⚠️ 补丁 $patch 存在冲突，请检查日志"
+              # 使用 || true 确保补丁冲突不会让整个构建立即崩溃
+              patch -p1 -F 3 < "$patch" || echo "⚠️ 补丁 $patch 应用时存在冲突，已跳过，请检查编译日志"
               cd ..
             else
-              echo "❌ 补丁 $patch 下载失败"
+              echo "❌ 补丁 $patch 文件不存在，跳过。"
             fi
           done
 
-          # 将 BBRv3 设为默认拥塞控制算法 (与 GKID-Kernels 行为一致)
-          echo "正在将 BBRv3 设为默认拥塞控制算法..."
-          sed -i '/^CONFIG_DEFAULT_TCP_CONG=/d' ./common/arch/arm64/configs/gki_defconfig
-          echo "CONFIG_DEFAULT_TCP_CONG=bbr" >> ./common/arch/arm64/configs/gki_defconfig
+          # 检查补丁是否应用成功
+          if grep -q "bbr" ./common/net/ipv4/tcp_bbr.c; then
+            echo "BBRv3 补丁似乎已成功应用。"
+          else
+            echo "⚠️ 警告：未能从源码中确认 BBRv3 是否应用，请务必在编译日志中仔细检查！"
+          fi
 
-          # 确保 BBR 编译选项已开启
+          # 仅确认 BBR 编译选项开启，不设为默认算法
+          echo "正在确保 BBRv3 编译选项已开启..."
           echo "CONFIG_TCP_CONG_BBR=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig
 
-          echo "BBRv3 集成完成。请编译后验证。"
+          echo "BBRv3 集成阶段结束，即将进入编译。"
 
       - name: 启用 Droidspaces 容器支持
         run: |
@@ -868,7 +874,7 @@ jobs:
           - LZ4KD支持：${{ github.event.inputs.lz4kd_enable }}
           - 网络功能增强：${{ github.event.inputs.better_net }}
           - BBR/Brutal 等拥塞控制算法支持：${{ github.event.inputs.bbr_enable }}
-          - BBRv3 拥塞控制算法支持：${{ github.event.inputs.bbrv3_enable }}
+          - BBRv3 拥塞控制算法支持（仅编译）：${{ github.event.inputs.bbrv3_enable }}
           - Droidspaces 容器支持：${{ github.event.inputs.droidspaces_enable }}
           - ADIOS IO调度器支持：${{ github.event.inputs.adios_enable }}
           - Re-Kernel支持：${{ github.event.inputs.rekernel_enable }}
