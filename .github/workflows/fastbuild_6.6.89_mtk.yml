@@ -66,7 +66,7 @@ on:
         type: boolean
         default: 'false'
       ecmp_enable:      
-        description: 'MPTCP支持'      
+        description: 'MPTCP支持目前用不了 不知道是哪里破坏KMl'      
         required: false      
         type: boolean      
         default: 'false'
